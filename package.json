@@ -1,6 +1,6 @@
 {
   "name": "@powerduck/x-to-openapi",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "type": "module",
   "description": "Extensible production-grade X-to-OpenAPI 3.2 conversion framework. Convert curl commands and Postman collections to OpenAPI 3.2 documents.",
   "main": "./dist/index.cjs",
@@ -54,7 +54,7 @@
   "bugs": {
     "url": "https://github.com/powerducklab/x-to-openapi/issues"
   },
-  "homepage": "https://github.com/powerducklab/x-to-openapi#readme",
+  "homepage": "https://www.powerduck.com/",
   "dependencies": {
     "@powerduck/openapi-parser": "^0.3.3",
     "curlconverter": "^4.12.0"
