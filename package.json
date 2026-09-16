@@ -1,6 +1,6 @@
 {
   "name": "@powerduck/x-to-openapi",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "type": "module",
   "description": "Extensible production-grade X-to-OpenAPI 3.2 conversion framework. Convert curl commands and Postman collections to OpenAPI 3.2 documents.",
   "main": "./dist/index.cjs",
