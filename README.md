@@ -186,24 +186,6 @@ import type {
 
 ---
 
-## CLI Usage
-
-```bash
-# Install globally
-npm install -g @powerduck/x-to-openapi
-
-# Convert a curl command
-x-to-openapi curl "curl https://api.example.com/users" -o openapi.json
-
-# Convert a Postman collection
-x-to-openapi postman collection.json -o openapi.yaml
-
-# Convert from a file containing curl commands
-x-to-openapi batch commands.txt -o openapi.json
-```
-
----
-
 ## License
 
 MIT © [POWERDUCK LIMITED](https://www.powerduck.com)
