@@ -84,7 +84,7 @@ const result = await postmanToOpenApi(collection, {
 
 - [Official Website](https://www.powerduck.com/opensource/x-to-openapi.html)
 - [Documentation](https://www.powerduck.com/docs/x-to-openapi/introduction)
-- [Live Demo](https://www.powerduck.com/demo/x-to-openapi)
+- [Live Demo](https://www.powerduck.com/demo/)
 - [GitHub](https://github.com/powerducklab/x-to-openapi)
 - [npm](https://www.npmjs.com/package/@powerduck/x-to-openapi)
 
@@ -126,18 +126,20 @@ const result = await curlToOpenApi("curl https://api.example.com/users", {
 
 #### Options
 
-| Option                 | Type       | Default           | Description                                 |
-| ---------------------- | ---------- | ----------------- | ------------------------------------------- |
-| `title`                | `string`   | `"Generated API"` | API title                                   |
-| `version`              | `string`   | `"1.0.0"`         | API version                                 |
-| `description`          | `string`   | -                 | API description                             |
-| `servers`              | `string[]` | -                 | Server URLs (auto-detected if not provided) |
-| `useServerBasePath`    | `boolean`  | `true`            | Extract base path from URLs                 |
-| `includeCommonHeaders` | `boolean`  | `false`           | Include common HTTP headers                 |
-| `includeCookies`       | `boolean`  | `false`           | Include cookie parameters                   |
-| `includeExamples`      | `boolean`  | `true`            | Generate example values                     |
-| `validate`             | `boolean`  | `true`            | Validate generated spec                     |
-| `strict`               | `boolean`  | `false`           | Strict mode (fail on warnings)              |
+| Option                    | Type      | Default           | Description                                                         |
+| ------------------------- | --------- | ----------------- | ------------------------------------------------------------------- |
+| `title`                   | `string`  | `"Generated API"` | API title                                                           |
+| `version`                 | `string`  | `"1.0.0"`         | API version                                                         |
+| `description`             | `string`  | `""`              | API description                                                     |
+| `inferPathParameters`     | `boolean` | `true`            | Synthesize path parameters from URL path variables                  |
+| `pathParameterMinSamples` | `number`  | `2`               | Minimum requests before a path variable becomes a path parameter    |
+| `inferSecurity`           | `boolean` | `true`            | Detect bearer/API key/basic auth and emit security schemes          |
+| `useServerBasePath`       | `boolean` | `false`           | Collapse the single common origin into `servers[0]` and strip paths |
+| `includeCommonHeaders`    | `boolean` | `false`           | Include common HTTP headers (User-Agent, Accept, etc.)              |
+| `includeCookies`          | `boolean` | `false`           | Include cookie parameters                                           |
+| `includeExamples`         | `boolean` | `false`           | Generate example values for parameters and request bodies           |
+| `validate`                | `boolean` | `true`            | Validate the generated spec                                         |
+| `strict`                  | `boolean` | `false`           | Strict mode (treat warnings as errors)                              |
 
 ### `postmanToOpenApi(collection, options?)`
 
@@ -156,19 +158,19 @@ const result = await postmanToOpenApi(collection, {
 
 ```typescript
 interface ConvertResult {
-  document: OpenAPIDocument;
-  warnings: Warning[];
-  errors: Error[];
-  stats: {
-    totalRequests: number;
-    convertedRequests: number;
-    skippedRequests: number;
-    paths: number;
-    operations: number;
-    schemas: number;
-  };
+  document: OpenApiDocument;
+  requests: NormalizedRequest[];
+  diagnostics: Diagnostic[];
+  ok: boolean;
+  documentValid: boolean;
 }
 ```
+
+- `document` — the generated OpenAPI 3.2 document
+- `requests` — the normalized source requests (JSON-safe copies)
+- `diagnostics` — conversion and validation diagnostics
+- `ok` — `true` when no error-severity diagnostic was produced
+- `documentValid` — `true` when the emitted document passed schema validation (or validation was skipped)
 
 ---
 
@@ -178,10 +180,12 @@ interface ConvertResult {
 import type {
   ConvertOptions,
   ConvertResult,
-  Warning,
-  OpenAPIDocument,
-  PostmanCollection,
+  Diagnostic,
+  OpenApiDocument,
 } from "@powerduck/x-to-openapi";
+import { PostmanTypes } from "@powerduck/x-to-openapi";
+
+type PostmanCollection = PostmanTypes.PostmanCollection;
 ```
 
 ---
