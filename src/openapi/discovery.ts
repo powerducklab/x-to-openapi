@@ -97,12 +97,16 @@ function mediaTypeObject(
   media: DiscoveredMediaType,
   report: (diagnostic: Diagnostic) => void,
   context: string,
+  allowGaps: boolean,
 ): Record<string, unknown> {
+  // Missing schemas are discovery gaps: the emitted fallback (empty schema /
+  // itemSchema) is structurally valid, so under allowGaps they are warnings.
+  const gapSeverity: Diagnostic["severity"] = allowGaps ? "warning" : "error";
   if (media.mediaType === EVENT_STREAM) {
     if (!media.itemSchema && !(media.schema && Object.keys(media.schema).length)) {
       report({
         code: "DISCOVERY_MEDIA_WITHOUT_SCHEMA",
-        severity: "error",
+        severity: gapSeverity,
         path: context,
         message: `${context}: SSE media type requires itemSchema.`,
       });
@@ -115,7 +119,7 @@ function mediaTypeObject(
   if (!media.schema || Object.keys(media.schema).length === 0) {
     report({
       code: "DISCOVERY_MEDIA_WITHOUT_SCHEMA",
-      severity: "error",
+      severity: gapSeverity,
       path: context,
       message: `${context}: media type "${media.mediaType}" has no schema.`,
     });
@@ -296,7 +300,7 @@ export function buildDiscoveryOpenApi32(
     if (op.requestBody && op.requestBody.content.length > 0) {
       const content: Record<string, unknown> = {};
       for (const media of op.requestBody.content) {
-        content[media.mediaType] = mediaTypeObject(media, report, context);
+        content[media.mediaType] = mediaTypeObject(media, report, context, allowGaps);
       }
       operation.requestBody = {
         ...(op.requestBody.required ? { required: true } : {}),
@@ -320,7 +324,7 @@ export function buildDiscoveryOpenApi32(
       if (response.content && response.content.length > 0) {
         const content: Record<string, unknown> = {};
         for (const media of response.content) {
-          content[media.mediaType] = mediaTypeObject(media, report, `${context} ${response.statusCode}`);
+          content[media.mediaType] = mediaTypeObject(media, report, `${context} ${response.statusCode}`, allowGaps);
         }
         item.content = content;
       }
