@@ -312,7 +312,7 @@ export function buildDiscoveryOpenApi32(
     if (op.responses.length === 0) {
       report({
         code: "DISCOVERY_RESPONSE_MISSING",
-        severity: "error",
+        severity: allowGaps ? "warning" : "error",
         path: op.path,
         source: op.origin.file,
         message: `${context}: operation declares no responses.`,
