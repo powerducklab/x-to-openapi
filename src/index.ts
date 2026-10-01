@@ -51,6 +51,13 @@ export type { OpenApiDocument } from "./core/types.js";
 export { validateOpenApi32 as validateOpenApiDocument } from "./validation/openapi32.js";
 
 // ---------------------------------------------------------------------------
+// Discovery IR (source code scanning → OpenAPI 3.2)
+// ---------------------------------------------------------------------------
+export { discoveryToOpenApi } from "./discovery.js";
+export { buildDiscoveryOpenApi32 } from "./openapi/discovery.js";
+export type * from "./core/discovery.js";
+
+// ---------------------------------------------------------------------------
 // All core types (ConvertOptions, ConvertResult, NormalizedRequest, etc.)
 // ---------------------------------------------------------------------------
 export type * from "./core/types.js";
