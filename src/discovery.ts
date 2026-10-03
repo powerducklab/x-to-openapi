@@ -46,9 +46,10 @@ export async function discoveryToOpenApi(
       documentValid = outcome.valid;
       for (const diagnostic of outcome.diagnostics) bag.report(diagnostic);
     } catch (cause) {
+      documentValid = false;
       bag.report({
         code: "OAS_VALIDATOR_FAILED",
-        severity: "warning",
+        severity: "error",
         message: cause instanceof Error ? cause.message : String(cause),
         cause,
       });

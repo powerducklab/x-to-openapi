@@ -320,21 +320,32 @@ export function buildDiscoveryOpenApi32(
     }
     const responses: Record<string, unknown> = {};
     for (const response of op.responses) {
-      const item: Record<string, unknown> = { description: response.description };
+      const item = (responses[response.statusCode] as Record<string, unknown> | undefined)
+        ?? { description: response.description };
+      if (!item.description && response.description) item.description = response.description;
       if (response.content && response.content.length > 0) {
-        const content: Record<string, unknown> = {};
+        const content = (item.content as Record<string, Record<string, unknown>> | undefined) ?? {};
         for (const media of response.content) {
-          content[media.mediaType] = mediaTypeObject(media, report, `${context} ${response.statusCode}`, allowGaps);
+          const incoming = mediaTypeObject(media, report, `${context} ${response.statusCode}`, allowGaps);
+          const existing = content[media.mediaType];
+          if (existing) {
+            for (const field of ["schema", "itemSchema"]) {
+              if (existing[field] !== undefined && incoming[field] !== undefined && !deepEqual(existing[field], incoming[field])) {
+                incoming[field] = { anyOf: [existing[field], incoming[field]] };
+              }
+            }
+          }
+          content[media.mediaType] = incoming;
         }
         item.content = content;
       }
       if (response.headers && Object.keys(response.headers).length > 0) {
-        item.headers = Object.fromEntries(
+        item.headers = { ...(item.headers as Record<string, unknown> ?? {}), ...Object.fromEntries(
           Object.entries(response.headers).map(([name, schema]) => [
             name,
             { schema: rewriteRefs(clone(schema), rename) },
           ]),
-        );
+        ) };
       }
       responses[response.statusCode] = item;
     }

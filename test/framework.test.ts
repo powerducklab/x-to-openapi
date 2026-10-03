@@ -20,11 +20,12 @@ const paths = (document: unknown) =>
   (document as { paths: Record<string, any> }).paths;
 
 describe("x-to-openapi - framework", () => {
-  it("has a usable curlconverter backend", () => {
-    const backend = resolveBackend();
+  it("has a usable curlconverter backend", async () => {
+    const backend = await resolveBackend();
+    const exports = (await availableExports()).join(", ");
     expect(
       backend,
-      `no curlconverter generator found; exports: ${availableExports().join(", ")}`,
+      `no curlconverter generator found; exports: ${exports}`,
     ).toBeTruthy();
   });
 

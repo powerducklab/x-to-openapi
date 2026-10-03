@@ -230,14 +230,15 @@ export class CurlAdapter implements SourceAdapter<string | readonly string[]> {
       return [];
     }
 
-    const backend = resolveBackend();
+    const backend = await resolveBackend();
 
     if (!backend) {
+      const exports = (await availableExports()).join(", ");
       context.report({
         code: "CURL_CAPABILITY_MISSING",
         severity: "error",
         source: this.id,
-        message: `No usable curlconverter generator found. Available exports: ${availableExports().join(", ") || "(none)"}.`,
+        message: `No usable curlconverter generator found. Available exports: ${exports || "(none)"}.`,
       });
       return [];
     }

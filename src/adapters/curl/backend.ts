@@ -1,5 +1,3 @@
-import * as curlconverterNamespace from "curlconverter";
-
 import type { FormField, Header, ParameterValue } from "../../core/types.js";
 
 /** Canonical intermediate shape, independent of which generator produced it. */
@@ -32,13 +30,29 @@ const isRecord = (value: unknown): value is UnknownRecord =>
 const isString = (value: unknown): value is string => typeof value === "string";
 
 /**
+ * curlconverter is ESM-only. A static `import *` would be compiled into a
+ * CommonJS `require()` in the CJS bundle and crash Electron's main process
+ * with ERR_REQUIRE_ESM. Load it lazily through a dynamic `import()`, which
+ * Node resolves as ESM from both ESM and CJS hosts.
+ */
+let namespacePromise: Promise<UnknownRecord> | undefined;
+
+function loadNamespace(): Promise<UnknownRecord> {
+  if (!namespacePromise) {
+    namespacePromise = import("curlconverter") as Promise<UnknownRecord>;
+  }
+  return namespacePromise;
+}
+
+/**
  * Unwraps ESM/CJS interop layers. A CJS build imported via `import *` nests the
  * real exports under `.default`, sometimes twice with certain bundlers.
  */
-function candidates(): UnknownRecord[] {
+async function candidates(): Promise<UnknownRecord[]> {
+  const namespace = await loadNamespace();
   const seen = new Set<unknown>();
   const result: UnknownRecord[] = [];
-  const queue: unknown[] = [curlconverterNamespace];
+  const queue: unknown[] = [namespace];
 
   while (queue.length > 0) {
     const current = queue.shift();
@@ -52,10 +66,10 @@ function candidates(): UnknownRecord[] {
   return result;
 }
 
-function findFunction(
+async function findFunction(
   names: readonly string[],
-): { name: string; fn: AnyFn } | undefined {
-  for (const candidate of candidates()) {
+): Promise<{ name: string; fn: AnyFn } | undefined> {
+  for (const candidate of await candidates()) {
     for (const name of names) {
       const value = candidate[name];
       if (typeof value === "function") return { name, fn: value as AnyFn };
@@ -64,10 +78,16 @@ function findFunction(
   return undefined;
 }
 
-export function availableExports(): string[] {
-  return [
-    ...new Set(candidates().flatMap((candidate) => Object.keys(candidate))),
-  ].sort();
+export async function availableExports(): Promise<string[]> {
+  try {
+    return [
+      ...new Set(
+        (await candidates()).flatMap((candidate) => Object.keys(candidate)),
+      ),
+    ].sort();
+  } catch {
+    return [];
+  }
 }
 
 /* ----------------------------- header parsing ----------------------------- */
@@ -321,23 +341,28 @@ function fromJson(output: unknown): RawRequest {
 
 let cached: CurlBackend | null | undefined;
 
-export function resolveBackend(): CurlBackend | undefined {
+export async function resolveBackend(): Promise<CurlBackend | undefined> {
   if (cached !== undefined) return cached ?? undefined;
 
-  // Prefer the JSON generator: it preserves multipart form fields,
-  // form-urlencoded data, and auth metadata that the HAR generator drops.
-  const json = findFunction(["toJsonObject", "toJsonString", "toJson"]);
+  try {
+    // Prefer the JSON generator: it preserves multipart form fields,
+    // form-urlencoded data, and auth metadata that the HAR generator drops.
+    const json = await findFunction(["toJsonObject", "toJsonString", "toJson"]);
 
-  if (json) {
-    cached = { kind: "json", convert: (command) => fromJson(json.fn(command)) };
-    return cached;
-  }
+    if (json) {
+      cached = { kind: "json", convert: (command) => fromJson(json.fn(command)) };
+      return cached;
+    }
 
-  const har = findFunction(["toHar", "toHarString"]);
+    const har = await findFunction(["toHar", "toHarString"]);
 
-  if (har) {
-    cached = { kind: "har", convert: (command) => fromHar(har.fn(command)) };
-    return cached;
+    if (har) {
+      cached = { kind: "har", convert: (command) => fromHar(har.fn(command)) };
+      return cached;
+    }
+  } catch {
+    // curlconverter is an optional ESM-only dependency; a missing or
+    // unloadable build must not take down the whole adapter registry.
   }
 
   cached = null;
