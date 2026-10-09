@@ -193,3 +193,7 @@ type PostmanCollection = PostmanTypes.PostmanCollection;
 ## License
 
 MIT © [POWERDUCK LIMITED](https://www.powerduck.com)
+
+## 0.3.4 — Special JSON property names
+
+Inferred object schemas and merged array-item schemas preserve JSON fields named `__proto__`, `constructor` and other prototype names. These fields remain ordinary schema properties and required-field candidates.

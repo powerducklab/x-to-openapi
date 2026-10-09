@@ -68,7 +68,7 @@ export function jsonSchema(value: unknown, includeExample = false): Schema {
   }
 
   if (typeof value === "object") {
-    const properties: Record<string, Schema> = {};
+    const properties: Record<string, Schema> = Object.create(null);
     for (const [key, child] of Object.entries(
       value as Record<string, unknown>,
     )) {
@@ -118,7 +118,7 @@ export function mergeSchemas(schemas: readonly Schema[]): Schema {
   const allTypes = [...new Set(items.flatMap(types))];
 
   if (allTypes.length === 1 && allTypes[0] === "object") {
-    const properties: Record<string, Schema[]> = {};
+    const properties: Record<string, Schema[]> = Object.create(null);
     const requiredCounts = new Map<string, number>();
 
     for (const schema of items) {
@@ -134,7 +134,7 @@ export function mergeSchemas(schemas: readonly Schema[]): Schema {
       }
     }
 
-    const merged: Record<string, Schema> = {};
+    const merged: Record<string, Schema> = Object.create(null);
     for (const [key, samples] of Object.entries(properties))
       merged[key] = mergeSchemas(samples);
 
